@@ -168,6 +168,7 @@ void CWinSize3Dlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
     data->csClass = csClass;
     data->bUseClass = true;
     data->cmp_mode = 1;
+    data->auto_delay = 100;
     cbWindows.SetItemDataPtr(i, data);
 
     m_TrayIcon.ShowBalloon("New " + csTitle);
