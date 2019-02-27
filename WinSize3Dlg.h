@@ -41,12 +41,13 @@ protected:
   int FindThis(HWND hwnd, CString &csTitle, CString &csClass);
   void ClearComboBox();
   void Key(BYTE key, int press_release = 3);
+  void Check4ClosedWindows();
 
 	HICON m_hIcon;
   CSystemTray m_TrayIcon;
   RECT desktop;
   CXML xml;
-  CPtrList *checkedWindows, *nowWindows;
+  CPtrList *checkedWindows;
   bool bFirstShow, bNoAutotype;
 
 	// Generated message map functions
@@ -85,4 +86,5 @@ public:
   afx_msg void OnEnChangeEdautodelay();
   CComboBox cbCmpMode;
   afx_msg void OnCbnSelchangeCbcmpmode();
+  afx_msg void OnIconmenuExit();
 };

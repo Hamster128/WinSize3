@@ -17,16 +17,16 @@
 #define IDC_EDCLASS                     1009
 #define IDC_CBUSECLASS                  1010
 #define IDC_EDAUTODELAY                 1011
-#define IDC_COMBO1                      1012
 #define IDC_CBCMPMODE                   1012
 #define ID_ICONMENU_REPOSITIONALL       32771
+#define ID_ICONMENU_EXIT                32772
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        132
-#define _APS_NEXT_COMMAND_VALUE         32772
+#define _APS_NEXT_COMMAND_VALUE         32773
 #define _APS_NEXT_CONTROL_VALUE         1013
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

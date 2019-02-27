@@ -63,6 +63,7 @@ BEGIN_MESSAGE_MAP(CWinSize3Dlg, CDialogEx)
   ON_BN_CLICKED(IDC_CBUSECLASS, &CWinSize3Dlg::OnBnClickedCbuseclass)
   ON_EN_CHANGE(IDC_EDAUTODELAY, &CWinSize3Dlg::OnEnChangeEdautodelay)
   ON_CBN_SELCHANGE(IDC_CBCMPMODE, &CWinSize3Dlg::OnCbnSelchangeCbcmpmode)
+  ON_COMMAND(ID_ICONMENU_EXIT, &CWinSize3Dlg::OnIconmenuExit)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -337,18 +338,13 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
 
   wp.length = sizeof(wp);
 
-  if (::GetWindowPlacement(hwnd, &wp))
-  { 
-    if (wp.showCmd == SW_HIDE)
-      return;
+  if (::IsIconic(hwnd))
+    return;
 
-    if (::IsIconic(hwnd))
-      return;
-  }
+  if (::GetWindowPlacement(hwnd, &wp) && wp.showCmd == SW_HIDE)
+    return;
 
-  nowWindows->AddTail(hwnd);
-
-  if (bFirstShow)
+  if (!wp.rcNormalPosition.right)
     return;
 
   for (POSITION pos = checkedWindows->GetHeadPosition(); pos;)
@@ -388,7 +384,9 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
   if (height == -1)
     height = rect.bottom - rect.top;
 
-  ::SetWindowPos(hwnd, NULL, left, top, width, height, SWP_NOZORDER);
+  ::SetWindowPos(hwnd, NULL, left, top, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
+
+  checkedWindows->AddTail(hwnd);
 
   if (!data->csAutotype.GetLength() || bNoAutotype)
     return;
@@ -479,19 +477,31 @@ void CWinSize3Dlg::OnTimer(UINT_PTR nIDEvent)
     LoadData();
     checkedWindows->RemoveAll();
 
-    if(!bFirstShow)
+    if(bFirstShow)
       bNoAutotype = true;
   }
 
-  nowWindows = new CPtrList();;
-
   EnumWindows(EnumWindowsProc, (LPARAM)this);
 
-  delete checkedWindows;
-  checkedWindows = nowWindows;
+  Check4ClosedWindows();
 
   bFirstShow = false;
   bNoAutotype = false;
+}
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::Check4ClosedWindows()
+{
+  for (POSITION pos = checkedWindows->GetHeadPosition(); pos;)
+  {
+    POSITION apos = pos;
+    HWND hwnd = (HWND)checkedWindows->GetNext(pos);
+
+    if (IsWindow(hwnd))
+      continue;
+
+    checkedWindows->RemoveAt(apos);
+  }
 }
 
 //------------------------------------------------------------------------------------------
@@ -568,6 +578,7 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
 void CWinSize3Dlg::OnChangeEdtitle()
 {
   btnApply.EnableWindow(true);
+  cbCmpMode.SetCurSel(0);
 }
 
 //------------------------------------------------------------------------------------------
@@ -689,4 +700,11 @@ void CWinSize3Dlg::OnEnChangeEdautodelay()
 void CWinSize3Dlg::OnCbnSelchangeCbcmpmode()
 {
   btnApply.EnableWindow(true);
+}
+
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::OnIconmenuExit()
+{
+  PostMessage(WM_CLOSE, 0, NULL);
 }
