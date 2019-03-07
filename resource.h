@@ -5,6 +5,7 @@
 #define IDD_WINSIZE3_DIALOG             102
 #define IDR_MAINFRAME                   128
 #define IDR_MENU1                       130
+#define IDD_DLGNAME                     132
 #define IDC_CBWINDOWS                   1000
 #define IDC_EDTITLE                     1001
 #define IDC_BTNAPPLY                    1002
@@ -18,16 +19,22 @@
 #define IDC_CBUSECLASS                  1010
 #define IDC_EDAUTODELAY                 1011
 #define IDC_CBCMPMODE                   1012
+#define IDC_TAB1                        1013
+#define IDC_EDNAME                      1014
 #define ID_ICONMENU_REPOSITIONALL       32771
 #define ID_ICONMENU_EXIT                32772
+#define ID_ICONMENU_TAB0                32773
+#define ID_TAB1                         32774
+#define ID_TAB0                         32775
+#define ID_STANDARD                     32776
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        132
-#define _APS_NEXT_COMMAND_VALUE         32773
-#define _APS_NEXT_CONTROL_VALUE         1013
+#define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_COMMAND_VALUE         32777
+#define _APS_NEXT_CONTROL_VALUE         1015
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

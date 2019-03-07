@@ -39,6 +39,9 @@
     <ClInclude Include="..\mfcHK.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="dlgName.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="WinSize3.cpp">
@@ -57,6 +60,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\mfcHK.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dlgName.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -30,7 +30,6 @@ void CWinSize3Dlg::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_CBWINDOWS, cbWindows);
   DDX_Control(pDX, IDC_EDTITLE, edTitle);
   DDX_Control(pDX, IDC_BTNAPPLY, btnApply);
-  //  DDX_Control(pDX, IDC_EDHEIGHT, edheight);
   DDX_Control(pDX, IDC_EDHEIGHT, edHeight);
   DDX_Control(pDX, IDC_EDLEFT, edLeft);
   DDX_Control(pDX, IDC_EDTOP, edTop);
@@ -40,6 +39,7 @@ void CWinSize3Dlg::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_EDCLASS, edClass);
   DDX_Control(pDX, IDC_EDAUTODELAY, edAutoDelay);
   DDX_Control(pDX, IDC_CBCMPMODE, cbCmpMode);
+  DDX_Control(pDX, IDC_TAB1, tabTabs);
 }
 
 //------------------------------------------------------------------------------------------
@@ -58,12 +58,14 @@ BEGIN_MESSAGE_MAP(CWinSize3Dlg, CDialogEx)
   ON_EN_CHANGE(IDC_EDTOP, &CWinSize3Dlg::OnChangeEdtop)
   ON_EN_CHANGE(IDC_EDWIDTH, &CWinSize3Dlg::OnChangeEdwidth)
   ON_BN_CLICKED(IDC_BTNDELETE, &CWinSize3Dlg::OnBnClickedBtndelete)
-  ON_COMMAND(ID_ICONMENU_REPOSITIONALL, &CWinSize3Dlg::OnIconmenuRepositionall)
+  ON_COMMAND(ID_STANDARD, &CWinSize3Dlg::OnMenuTab0)
   ON_EN_CHANGE(IDC_EDAUTOTYPE, &CWinSize3Dlg::OnEnChangeEdautotype)
   ON_BN_CLICKED(IDC_CBUSECLASS, &CWinSize3Dlg::OnBnClickedCbuseclass)
   ON_EN_CHANGE(IDC_EDAUTODELAY, &CWinSize3Dlg::OnEnChangeEdautodelay)
   ON_CBN_SELCHANGE(IDC_CBCMPMODE, &CWinSize3Dlg::OnCbnSelchangeCbcmpmode)
   ON_COMMAND(ID_ICONMENU_EXIT, &CWinSize3Dlg::OnIconmenuExit)
+  ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, &CWinSize3Dlg::OnTcnSelchangeTab1)
+  ON_NOTIFY(NM_RCLICK, IDC_TAB1, &CWinSize3Dlg::OnNMRClickTab1)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -101,12 +103,46 @@ BOOL CWinSize3Dlg::OnInitDialog()
   checkedWindows = new CPtrList();
   bFirstShow = true;
   bNoAutotype = false;
+  iCurTab = 0;
 
   CreateDirectory(commonDocs__ + "\\WinSize3", NULL);
 
   SetTimer(0, 1, NULL);
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
+}
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::CustomizeMenu()
+{
+  while (m_TrayIcon.pMenu->GetMenuItemCount() > 2)
+    m_TrayIcon.pMenu->RemoveMenu(1, MF_BYPOSITION);
+
+  for (int i = 1; i < tabTabs.GetItemCount() - 1; i++)
+  {
+    MENUITEMINFO mi;
+    memset(&mi, 0, sizeof(mi));
+    mi.cbSize = sizeof(mi);
+    mi.fMask = MIIM_ID | MIIM_STRING;
+    mi.wID = 7000 + i;
+    mi.dwTypeData = (LPSTR)(const char*)GetTabTitle(i);
+    m_TrayIcon.pMenu->InsertMenuItem(i, &mi, TRUE);
+  }
+
+  CheckMenu();
+}
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::CheckMenu()
+{
+  if (iCurTab == 0)  m_TrayIcon.pMenu->CheckMenuItem(ID_STANDARD, MF_CHECKED | MF_BYCOMMAND);
+  else               m_TrayIcon.pMenu->CheckMenuItem(ID_STANDARD, MF_UNCHECKED | MF_BYCOMMAND);
+
+  for (int i = 1; i < tabTabs.GetItemCount() - 1; i++)
+  {
+    if (iCurTab == i) m_TrayIcon.pMenu->CheckMenuItem(7000+i, MF_CHECKED | MF_BYCOMMAND);
+    else              m_TrayIcon.pMenu->CheckMenuItem(7000+i, MF_UNCHECKED | MF_BYCOMMAND);
+  }
 }
 
 //------------------------------------------------------------------------------------------
@@ -211,7 +247,7 @@ void CWinSize3Dlg::ClearComboBox()
     delete data;
   }
 
-  cbWindows.Clear();
+  cbWindows.ResetContent();
 }
 
 //------------------------------------------------------------------------------------------
@@ -222,12 +258,42 @@ void CWinSize3Dlg::LoadData()
 
   ClearComboBox();
 
+  tabTabs.DeleteAllItems();
+  tabTabs.InsertItem(0, "Standard");
+  tabTabs.InsertItem(1, "   +");
+
   if (!xml.Open(commonDocs__ + "\\WinSize3\\Config.xml"))
     return;
 
-  key.Format("%dx%d", desktop.right, desktop.bottom);
+  CXMLNode *node = xml.Root.FindByPath("groups");
+  CString csGroup;
 
-  CXMLNode *node = xml.Root.FindByPath(key);
+  if (node)
+  {
+    TCITEM item;
+    int i = 1;
+
+    for (CXMLNode *w = node->FirstChild(); w; w = node->NextChild())
+    {
+      item.mask = TCIF_TEXT | TCIF_PARAM;
+      item.pszText = w->Data;
+      item.lParam = atoi(w->Property("id"));
+      tabTabs.InsertItem(i++, &item);
+    }
+
+    if (iCurTab > tabTabs.GetItemCount() - 2)
+      iCurTab = tabTabs.GetItemCount() - 2;
+
+    tabTabs.SetCurSel(iCurTab);
+
+    if(iCurTab)
+      csGroup.Format("_%d", GetTabLParam(iCurTab));
+  }
+
+  CustomizeMenu();
+
+  key.Format("%dx%d%s", desktop.right, desktop.bottom, csGroup);
+  node = xml.Root.FindByPath(key);
 
   if (!node)
     return;
@@ -259,14 +325,58 @@ void CWinSize3Dlg::LoadData()
 }
 
 //------------------------------------------------------------------------------------------
+CString CWinSize3Dlg::GetTabTitle(int idx)
+{
+  char buf[256];
+
+  TCITEM ti;
+  ti.mask = TCIF_TEXT;
+  ti.pszText = buf;
+  ti.cchTextMax = sizeof(buf);
+
+  tabTabs.GetItem(idx, &ti);
+
+  return buf;
+}
+
+//------------------------------------------------------------------------------------------
+LPARAM CWinSize3Dlg::GetTabLParam(int idx)
+{
+  TCITEM ti;
+  ti.mask = TCIF_PARAM;
+
+  tabTabs.GetItem(idx, &ti);
+
+  return ti.lParam;
+}
+
+//------------------------------------------------------------------------------------------
 void CWinSize3Dlg::SaveData()
 {
   CString key, text;
-  key.Format("%dx%d", desktop.right, desktop.bottom);
 
   xml.Root.SetName("WinSize3");
 
-  CXMLNode *node = xml.Root.FindByPath(key);
+  CXMLNode *node = xml.Root.FindByPath("groups");
+  CString csGroup;
+
+  if (node)
+    node->Delete();
+
+  node = xml.Root.AddChild("groups");
+  for (int i = 1; i < tabTabs.GetItemCount() - 1; i++)
+  {
+    CString csTitle = GetTabTitle(i);
+
+    CXMLNode *w = node->AddChild("name", csTitle);
+    w->SetProperty("id", GetTabLParam(i));
+
+    if (i == tabTabs.GetCurSel())
+      csGroup.Format("_%d", GetTabLParam(i));
+  }
+
+  key.Format("%dx%d%s", desktop.right, desktop.bottom, csGroup);
+  node = xml.Root.FindByPath(key);
 
   if (node)
     node->Delete();
@@ -384,7 +494,8 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
   if (height == -1)
     height = rect.bottom - rect.top;
 
-  ::SetWindowPos(hwnd, NULL, left, top, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
+  if(left != rect.left || top != rect.top || width != rect.right - rect.left || height != rect.bottom - rect.top)
+    ::SetWindowPos(hwnd, NULL, left, top, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
 
   checkedWindows->AddTail(hwnd);
 
@@ -474,7 +585,10 @@ void CWinSize3Dlg::OnTimer(UINT_PTR nIDEvent)
   if (memcmp(&rect, &desktop, sizeof(rect)) != 0)
   {
     memmove(&desktop, &rect, sizeof(rect));
+    iCurTab = 0;
     LoadData();
+    CustomizeMenu();
+
     checkedWindows->RemoveAll();
 
     if(bFirstShow)
@@ -672,8 +786,13 @@ void CWinSize3Dlg::OnBnClickedBtndelete()
 }
 
 //------------------------------------------------------------------------------------------
-void CWinSize3Dlg::OnIconmenuRepositionall()
+void CWinSize3Dlg::OnMenuTab0()
 {
+  iCurTab = 0;
+  LoadData();
+  OnSelchangeCbwindows();
+  CustomizeMenu();
+
   bNoAutotype = true;
   checkedWindows->RemoveAll();
 }
@@ -702,9 +821,116 @@ void CWinSize3Dlg::OnCbnSelchangeCbcmpmode()
   btnApply.EnableWindow(true);
 }
 
-
 //------------------------------------------------------------------------------------------
 void CWinSize3Dlg::OnIconmenuExit()
 {
   PostMessage(WM_CLOSE, 0, NULL);
+}
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult)
+{
+  if (tabTabs.GetCurSel() == tabTabs.GetItemCount() - 1)
+  {
+    dlgName dlg;
+
+    if (dlg.DoModal() == IDCANCEL)
+    {
+      tabTabs.SetCurSel(0);
+      return;
+    }
+
+    iCurTab = tabTabs.GetCurSel();
+
+    TCITEM item;
+    item.mask = TCIF_TEXT | TCIF_PARAM;
+    item.pszText = dlg.csName.GetBuffer(0);
+    item.lParam = rand();
+    tabTabs.SetItem(iCurTab, &item);
+
+    tabTabs.InsertItem(iCurTab + 1, "  +");
+    CustomizeMenu();
+
+    ClearComboBox();
+    OnSelchangeCbwindows();
+
+    SaveData();
+    return;
+  }
+
+  iCurTab = tabTabs.GetCurSel();
+  LoadData();
+  OnSelchangeCbwindows();
+  CheckMenu();
+
+  bNoAutotype = true;
+  checkedWindows->RemoveAll();
+}
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::OnNMRClickTab1(NMHDR *pNMHDR, LRESULT *pResult)
+{
+  *pResult = 0;
+
+  int idx = tabTabs.GetCurSel();
+
+  if (idx == 0 || idx == tabTabs.GetItemCount() - 1)
+    return;
+
+  dlgName dlg;
+  CString csOldName;
+
+  dlg.csName = GetTabTitle(idx);
+
+  if (dlg.DoModal() == IDCANCEL)
+    return;
+
+  if (!dlg.csName.GetLength())
+  {
+    if (AfxMessageBox("Delete Tab?", MB_OKCANCEL) != IDOK)
+      return;
+
+    int id = GetTabLParam(idx);
+
+    iCurTab--;
+    LoadData();
+    OnSelchangeCbwindows();
+
+    bNoAutotype = true;
+    checkedWindows->RemoveAll();
+
+    CString key;
+    key.Format("%dx%d_%d", desktop.right, desktop.bottom, id);
+    CXMLNode *node = xml.Root.FindByPath(key);
+
+    if (node)
+      node->Delete();
+
+    tabTabs.DeleteItem(idx);
+    CustomizeMenu();
+
+    SaveData();
+
+    return;
+  }
+
+  TCITEM item;
+  item.mask = TCIF_TEXT;
+  item.pszText = dlg.csName.GetBuffer(0);
+  tabTabs.SetItem(idx, &item);
+  CustomizeMenu();
+
+  SaveData();
+}
+
+//------------------------------------------------------------------------------------------
+LRESULT CWinSize3Dlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
+{
+  if (message == WM_COMMAND && wParam >= 7000 && wParam <= 7100)
+  {
+    tabTabs.SetCurSel(wParam-7000);
+    OnTcnSelchangeTab1(NULL, NULL);
+  }
+
+  return CDialogEx::WindowProc(message, wParam, lParam);
 }
