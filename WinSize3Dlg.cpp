@@ -40,6 +40,7 @@ void CWinSize3Dlg::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_EDAUTODELAY, edAutoDelay);
   DDX_Control(pDX, IDC_CBCMPMODE, cbCmpMode);
   DDX_Control(pDX, IDC_TAB1, tabTabs);
+  DDX_Control(pDX, IDC_CBKEEP, cbKeep);
 }
 
 //------------------------------------------------------------------------------------------
@@ -66,6 +67,7 @@ BEGIN_MESSAGE_MAP(CWinSize3Dlg, CDialogEx)
   ON_COMMAND(ID_ICONMENU_EXIT, &CWinSize3Dlg::OnIconmenuExit)
   ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, &CWinSize3Dlg::OnTcnSelchangeTab1)
   ON_NOTIFY(NM_RCLICK, IDC_TAB1, &CWinSize3Dlg::OnNMRClickTab1)
+  ON_BN_CLICKED(IDC_CBKEEP, &CWinSize3Dlg::OnBnClickedCbkeep)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -206,6 +208,7 @@ void CWinSize3Dlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
     data->bUseClass = true;
     data->cmp_mode = 1;
     data->auto_delay = 100;
+    data->keep = false;
     cbWindows.SetItemDataPtr(i, data);
 
     m_TrayIcon.ShowBalloon("New " + csTitle);
@@ -311,6 +314,7 @@ void CWinSize3Dlg::LoadData()
     data->bUseClass = atoi((*w)["use_class"]);
     data->auto_delay = atoi((*w)["auto_delay"]);
     data->cmp_mode = atoi((*w)["cmp_mode"]);
+    data->keep = atoi((*w)["keep"]);
 
     int i = cbWindows.AddString(w->Property("text"));
     cbWindows.SetItemDataPtr(i, data);
@@ -400,6 +404,7 @@ void CWinSize3Dlg::SaveData()
     w->AddChild("use_class", data->bUseClass);
     w->AddChild("auto_delay", data->auto_delay);
     w->AddChild("cmp_mode", data->cmp_mode);
+    w->AddChild("keep", data->keep);
   }
 
   xml.Save(commonDocs__ + "\\WinSize3\\Config.xml");
@@ -445,6 +450,7 @@ int CWinSize3Dlg::FindThis(HWND hwnd, CString &csTitle, CString &csClass)
 void CWinSize3Dlg::CheckWindow(HWND hwnd)
 {
   WINDOWPLACEMENT wp;
+  bool bAlreadyPositioned = false;
 
   wp.length = sizeof(wp);
 
@@ -457,12 +463,6 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
   if (!wp.rcNormalPosition.right)
     return;
 
-  for (POSITION pos = checkedWindows->GetHeadPosition(); pos;)
-  {
-    if (checkedWindows->GetNext(pos) == hwnd)
-      return;
-  }
-
   CString csTitle, csClass;
   int i = FindThis(hwnd, csTitle, csClass);
 
@@ -470,6 +470,18 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
     return;
 
   WINDOWDATA *data = (WINDOWDATA*)cbWindows.GetItemDataPtr(i);
+
+  for (POSITION pos = checkedWindows->GetHeadPosition(); pos;)
+  {
+    if (checkedWindows->GetNext(pos) == hwnd)
+    {
+      bAlreadyPositioned = true;
+      break;
+    }
+  }
+
+  if (bAlreadyPositioned && !data->keep)
+    return;
 
   RECT rect;
   ::GetWindowRect(hwnd, &rect);
@@ -497,9 +509,10 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
   if(left != rect.left || top != rect.top || width != rect.right - rect.left || height != rect.bottom - rect.top)
     ::SetWindowPos(hwnd, NULL, left, top, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
 
-  checkedWindows->AddTail(hwnd);
+  if(!bAlreadyPositioned)
+    checkedWindows->AddTail(hwnd);
 
-  if (!data->csAutotype.GetLength() || bNoAutotype)
+  if (!data->csAutotype.GetLength() || bNoAutotype || bAlreadyPositioned)
     return;
 
   Sleep(data->auto_delay);
@@ -646,6 +659,7 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
     cbUseClass.SetCheck(true);
     edAutoDelay.SetWindowTextA("");
     cbCmpMode.SetCurSel(0);
+    cbKeep.SetCheck(0);
 
     return;
   }
@@ -684,6 +698,8 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
   cbUseClass.SetCheck(data->bUseClass);
 
   cbCmpMode.SetCurSel(data->cmp_mode);
+
+  cbKeep.SetCheck(data->keep);
 
   btnApply.EnableWindow(false);
 }
@@ -739,6 +755,8 @@ void CWinSize3Dlg::OnBnClickedBtnapply()
 
   data->cmp_mode = cbCmpMode.GetCurSel();
 
+  data->keep = cbKeep.GetCheck();
+
   cbWindows.SetCurSel(i);
 
   SaveData();
@@ -788,13 +806,8 @@ void CWinSize3Dlg::OnBnClickedBtndelete()
 //------------------------------------------------------------------------------------------
 void CWinSize3Dlg::OnMenuTab0()
 {
-  iCurTab = 0;
-  LoadData();
-  OnSelchangeCbwindows();
-  CustomizeMenu();
-
-  bNoAutotype = true;
-  checkedWindows->RemoveAll();
+  tabTabs.SetCurSel(0);
+  OnTcnSelchangeTab1(NULL, NULL);
 }
 
 //------------------------------------------------------------------------------------------
@@ -933,4 +946,10 @@ LRESULT CWinSize3Dlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
   }
 
   return CDialogEx::WindowProc(message, wParam, lParam);
+}
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::OnBnClickedCbkeep()
+{
+  btnApply.EnableWindow(true);
 }

@@ -13,6 +13,7 @@ typedef struct
   bool bUseClass;
   int auto_delay;
   int cmp_mode;
+  bool keep;
 } WINDOWDATA;
 
 
@@ -98,4 +99,6 @@ public:
   afx_msg void OnTcnSelchangeTab1(NMHDR *pNMHDR, LRESULT *pResult);
   afx_msg void OnNMRClickTab1(NMHDR *pNMHDR, LRESULT *pResult);
   virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
+  CButton cbKeep;
+  afx_msg void OnBnClickedCbkeep();
 };

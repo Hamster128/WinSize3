@@ -21,6 +21,7 @@
 #define IDC_CBCMPMODE                   1012
 #define IDC_TAB1                        1013
 #define IDC_EDNAME                      1014
+#define IDC_CBKEEP                      1015
 #define ID_ICONMENU_REPOSITIONALL       32771
 #define ID_ICONMENU_EXIT                32772
 #define ID_ICONMENU_TAB0                32773
@@ -34,7 +35,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        134
 #define _APS_NEXT_COMMAND_VALUE         32777
-#define _APS_NEXT_CONTROL_VALUE         1015
+#define _APS_NEXT_CONTROL_VALUE         1016
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
