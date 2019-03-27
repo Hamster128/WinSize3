@@ -449,10 +449,13 @@ int CWinSize3Dlg::FindThis(HWND hwnd, CString &csTitle, CString &csClass)
 //------------------------------------------------------------------------------------------
 void CWinSize3Dlg::CheckWindow(HWND hwnd)
 {
-  WINDOWPLACEMENT wp;
   bool bAlreadyPositioned = false;
 
+  WINDOWPLACEMENT wp;
   wp.length = sizeof(wp);
+
+  if (!::IsWindowVisible(hwnd))
+    return;
 
   if (::IsIconic(hwnd))
     return;
@@ -624,10 +627,38 @@ void CWinSize3Dlg::Check4ClosedWindows()
     POSITION apos = pos;
     HWND hwnd = (HWND)checkedWindows->GetNext(pos);
 
-    if (IsWindow(hwnd))
+    if (!IsWindow(hwnd))
+    {
+      checkedWindows->RemoveAt(apos);
       continue;
+    }
 
-    checkedWindows->RemoveAt(apos);
+    WINDOWPLACEMENT wp;
+    wp.length = sizeof(wp);
+
+    if (::IsIconic(hwnd))
+    {
+      checkedWindows->RemoveAt(apos);
+      continue;
+    }
+
+    if(!::IsWindowVisible(hwnd))
+    {
+      checkedWindows->RemoveAt(apos);
+      continue;
+    }
+
+    if (::GetWindowPlacement(hwnd, &wp) && wp.showCmd == SW_HIDE)
+    {
+      checkedWindows->RemoveAt(apos);
+      continue;
+    }
+
+    if (!wp.rcNormalPosition.right)
+    {
+      checkedWindows->RemoveAt(apos);
+      continue;
+    }
   }
 }
 
