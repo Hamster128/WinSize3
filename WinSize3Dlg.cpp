@@ -486,6 +486,8 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
   if (bAlreadyPositioned && !data->keep)
     return;
 
+  ::ShowWindow(hwnd, SW_RESTORE);
+
   RECT rect;
   ::GetWindowRect(hwnd, &rect);
 
