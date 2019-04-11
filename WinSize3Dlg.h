@@ -101,4 +101,5 @@ public:
   virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
   CButton cbKeep;
   afx_msg void OnBnClickedCbkeep();
+  virtual BOOL PreTranslateMessage(MSG* pMsg);
 };

@@ -562,6 +562,8 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
       else if (asKey == "RIGHT") Key(VK_RIGHT);
       else if (asKey == "CTRL DOWN") Key(VK_LCONTROL, 1);
       else if (asKey == "CTRL UP") Key(VK_LCONTROL, 2);
+      else if (asKey == "ALT DOWN") Key(VK_LMENU, 1);
+      else if (asKey == "ALT UP") Key(VK_LMENU, 2);
 
       continue;
     }
@@ -985,4 +987,62 @@ LRESULT CWinSize3Dlg::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 void CWinSize3Dlg::OnBnClickedCbkeep()
 {
   btnApply.EnableWindow(true);
+}
+
+//------------------------------------------------------------------------------------------
+BOOL CWinSize3Dlg::PreTranslateMessage(MSG* pMsg)
+{
+  if (GetFocus() == &edAutotype)
+  {
+    if (pMsg->message == WM_KEYDOWN && (pMsg->lParam & 0x40000000) == 0)
+    {
+      CString csText;
+      edAutotype.GetWindowTextA(csText);
+
+      BOOL bCtrl = ::GetKeyState(VK_CONTROL) & 0x8000;
+      BOOL bShift = ::GetKeyState(VK_SHIFT) & 0x8000;
+      BOOL bAlt = ::GetKeyState(VK_MENU) & 0x8000;
+
+      switch (pMsg->wParam)
+      {
+      case VK_CONTROL: return(true);
+      case VK_MENU: return(true);
+      case VK_TAB: edAutotype.SetWindowTextA(csText + "{TAB}"); edAutotype.SetSel(-1); return(true);
+      case VK_RETURN: edAutotype.SetWindowTextA(csText + "{RETURN}"); edAutotype.SetSel(-1); return(true);
+      case VK_LWIN: edAutotype.SetWindowTextA(csText + "{LWIN DOWN}"); edAutotype.SetSel(-1); return(true);
+      case VK_LEFT: edAutotype.SetWindowTextA(csText + "{LEFT}"); edAutotype.SetSel(-1); return(true);
+      case VK_UP: edAutotype.SetWindowTextA(csText + "{UP}"); edAutotype.SetSel(-1); return(true);
+      case VK_RIGHT: edAutotype.SetWindowTextA(csText + "{RIGHT}"); edAutotype.SetSel(-1); return(true);
+      case VK_DOWN: edAutotype.SetWindowTextA(csText + "{DOWN}"); edAutotype.SetSel(-1); return(true);
+      }
+
+      if (bCtrl && pMsg->wParam != 219)
+      {
+        edAutotype.SetWindowTextA(csText + "{CTRL DOWN}" + (char)tolower(pMsg->wParam) + "{CTRL UP}"); 
+        edAutotype.SetSel(-1);
+      }
+      
+      if (bAlt && pMsg->wParam!=219)
+      {
+        edAutotype.SetWindowTextA(csText + "{ALT DOWN}" + (char)tolower(pMsg->wParam) + "{ALT UP}"); 
+        edAutotype.SetSel(-1);
+      }
+    }
+
+    if (pMsg->message == WM_KEYUP)
+    {
+      CString csText;
+      edAutotype.GetWindowTextA(csText);
+
+      switch (pMsg->wParam)
+      {
+      case VK_CONTROL: return(true);
+      case VK_MENU: return(true);
+      case VK_LWIN: edAutotype.SetWindowTextA(csText + "{LWIN UP}"); edAutotype.SetSel(-1); return(true);
+      }
+    }
+  }
+
+
+  return CDialogEx::PreTranslateMessage(pMsg);
 }
