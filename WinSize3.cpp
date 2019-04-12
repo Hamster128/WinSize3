@@ -35,10 +35,26 @@ CWinSize3App::CWinSize3App()
 CWinSize3App theApp;
 
 
+bool CheckAppIsAlreadyRunning()
+{
+  HANDLE m_hStartEvent = CreateEvent(NULL, TRUE, FALSE, "eventWinSize3");
+
+  if (GetLastError() == ERROR_ALREADY_EXISTS) 
+  {
+    CloseHandle(m_hStartEvent);
+    return true;
+  }
+
+  return false;
+}
+
 // CWinSize3App initialization
 
 BOOL CWinSize3App::InitInstance()
 {
+  if (CheckAppIsAlreadyRunning())
+    return FALSE;
+
 	// InitCommonControlsEx() is required on Windows XP if an application
 	// manifest specifies use of ComCtl32.dll version 6 or later to enable
 	// visual styles.  Otherwise, any window creation will fail.
