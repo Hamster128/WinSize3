@@ -6,5 +6,5 @@ If this window is opened again, it`s position will be restored.
 For each screen resolution, you can store your own positions
 
 binary download
-http://henry-kellner.net/Downloads/WinSize3.zip
+http://henry-kellner.net/Download/WinSize3.zip
 
