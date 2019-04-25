@@ -41,6 +41,7 @@ void CWinSize3Dlg::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_CBCMPMODE, cbCmpMode);
   DDX_Control(pDX, IDC_TAB1, tabTabs);
   DDX_Control(pDX, IDC_CBKEEP, cbKeep);
+  DDX_Control(pDX, IDC_CB_SPECIAL_KEY, cbSpecialKey);
 }
 
 //------------------------------------------------------------------------------------------
@@ -68,6 +69,7 @@ BEGIN_MESSAGE_MAP(CWinSize3Dlg, CDialogEx)
   ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, &CWinSize3Dlg::OnTcnSelchangeTab1)
   ON_NOTIFY(NM_RCLICK, IDC_TAB1, &CWinSize3Dlg::OnNMRClickTab1)
   ON_BN_CLICKED(IDC_CBKEEP, &CWinSize3Dlg::OnBnClickedCbkeep)
+  ON_BN_CLICKED(IDC_CB_SPECIAL_KEY, &CWinSize3Dlg::OnClickedCbSpecialKey)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -530,14 +532,15 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
   inp.type = INPUT_KEYBOARD;
   inp.ki.dwFlags = KEYEVENTF_UNICODE;
 
+  ::ShowWindow(hwnd, SW_SHOW);
+  ::SetForegroundWindow(hwnd);
+  ::SetActiveWindow(hwnd);
+
   for (int i = 0; i < asKeys.GetLength(); i++)
   {
     char c = asKeys[i];
 
     Sleep(50);
-    ::ShowWindow(hwnd, SW_SHOW);
-    ::SetForegroundWindow(hwnd);
-    ::SetActiveWindow(hwnd);
 
     if (c == '{')
     {
@@ -994,7 +997,7 @@ BOOL CWinSize3Dlg::PreTranslateMessage(MSG* pMsg)
 {
   if (GetFocus() == &edAutotype)
   {
-    if (pMsg->message == WM_KEYDOWN && (pMsg->lParam & 0x40000000) == 0)
+    if (pMsg->message == WM_KEYDOWN && (pMsg->lParam & 0x40000000) == 0 && cbSpecialKey.GetCheck())
     {
       CString csText;
       edAutotype.GetWindowTextA(csText);
@@ -1045,4 +1048,11 @@ BOOL CWinSize3Dlg::PreTranslateMessage(MSG* pMsg)
 
 
   return CDialogEx::PreTranslateMessage(pMsg);
+}
+
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::OnClickedCbSpecialKey()
+{
+  // TODO: Add your control notification handler code here
 }

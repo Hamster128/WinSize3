@@ -102,4 +102,6 @@ public:
   CButton cbKeep;
   afx_msg void OnBnClickedCbkeep();
   virtual BOOL PreTranslateMessage(MSG* pMsg);
+  afx_msg void OnClickedCbSpecialKey();
+  CButton cbSpecialKey;
 };
