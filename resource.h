@@ -22,8 +22,9 @@
 #define IDC_TAB1                        1013
 #define IDC_EDNAME                      1014
 #define IDC_CBKEEP                      1015
-#define IDC_CHECK1                      1018
 #define IDC_CB_SPECIAL_KEY              1018
+#define IDC_CHECK1                      1019
+#define IDC_ACTIVATE_WINDOW             1019
 #define ID_ICONMENU_REPOSITIONALL       32771
 #define ID_ICONMENU_EXIT                32772
 #define ID_ICONMENU_TAB0                32773
@@ -37,7 +38,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        136
 #define _APS_NEXT_COMMAND_VALUE         32777
-#define _APS_NEXT_CONTROL_VALUE         1019
+#define _APS_NEXT_CONTROL_VALUE         1020
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

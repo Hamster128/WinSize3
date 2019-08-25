@@ -42,6 +42,7 @@ void CWinSize3Dlg::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_TAB1, tabTabs);
   DDX_Control(pDX, IDC_CBKEEP, cbKeep);
   DDX_Control(pDX, IDC_CB_SPECIAL_KEY, cbSpecialKey);
+  DDX_Control(pDX, IDC_ACTIVATE_WINDOW, cbActivateWindow);
 }
 
 //------------------------------------------------------------------------------------------
@@ -70,6 +71,7 @@ BEGIN_MESSAGE_MAP(CWinSize3Dlg, CDialogEx)
   ON_NOTIFY(NM_RCLICK, IDC_TAB1, &CWinSize3Dlg::OnNMRClickTab1)
   ON_BN_CLICKED(IDC_CBKEEP, &CWinSize3Dlg::OnBnClickedCbkeep)
   ON_BN_CLICKED(IDC_CB_SPECIAL_KEY, &CWinSize3Dlg::OnClickedCbSpecialKey)
+  ON_BN_CLICKED(IDC_ACTIVATE_WINDOW, &CWinSize3Dlg::OnClickedActivateWindow)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -108,6 +110,7 @@ BOOL CWinSize3Dlg::OnInitDialog()
   bFirstShow = true;
   bNoAutotype = false;
   iCurTab = 0;
+  pauseWindowChecks = 0;
 
   CreateDirectory(commonDocs__ + "\\WinSize3", NULL);
 
@@ -211,6 +214,7 @@ void CWinSize3Dlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
     data->cmp_mode = 1;
     data->auto_delay = 100;
     data->keep = false;
+    data->activate = false;
     cbWindows.SetItemDataPtr(i, data);
 
     m_TrayIcon.ShowBalloon("New " + csTitle);
@@ -317,6 +321,7 @@ void CWinSize3Dlg::LoadData()
     data->auto_delay = atoi((*w)["auto_delay"]);
     data->cmp_mode = atoi((*w)["cmp_mode"]);
     data->keep = atoi((*w)["keep"]);
+    data->activate = atoi((*w)["activate"]);
 
     int i = cbWindows.AddString(w->Property("text"));
     cbWindows.SetItemDataPtr(i, data);
@@ -407,6 +412,7 @@ void CWinSize3Dlg::SaveData()
     w->AddChild("auto_delay", data->auto_delay);
     w->AddChild("cmp_mode", data->cmp_mode);
     w->AddChild("keep", data->keep);
+    w->AddChild("activate", data->activate);
   }
 
   xml.Save(commonDocs__ + "\\WinSize3\\Config.xml");
@@ -449,10 +455,54 @@ int CWinSize3Dlg::FindThis(HWND hwnd, CString &csTitle, CString &csClass)
 }
 
 //------------------------------------------------------------------------------------------
+void Key(BYTE key, int press_release = 3)
+{
+  if (press_release & 1)
+    keybd_event(key, 0, 0, 0);
+
+  if (press_release & 2)
+    keybd_event(key, 0, KEYEVENTF_KEYUP, 0);
+}
+
+//------------------------------------------------------------------------------------------
+UINT AFX_CDECL windowPositionThread(LPVOID pParam)
+{
+  WINDOWDATA* data = (WINDOWDATA*)pParam;
+
+  ::ShowWindow(data->hwnd, SW_SHOWNOACTIVATE);
+
+  RECT rect;
+  ::GetWindowRect(data->hwnd, &rect);
+
+  int left = data->left;
+
+  if (left == -1)
+    left = rect.left;
+
+  int top = data->top;
+
+  if (top == -1)
+    top = rect.top;
+
+  int width = data->width;
+
+  if (width == -1)
+    width = rect.right - rect.left;
+
+  int height = data->height;
+
+  if (height == -1)
+    height = rect.bottom - rect.top;
+
+  if (left != rect.left || top != rect.top || width != rect.right - rect.left || height != rect.bottom - rect.top || data->activate)
+    ::SetWindowPos(data->hwnd, NULL, left, top, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
+
+  return 0;
+}
+
+//------------------------------------------------------------------------------------------
 void CWinSize3Dlg::CheckWindow(HWND hwnd)
 {
-  bool bAlreadyPositioned = false;
-
   WINDOWPLACEMENT wp;
   wp.length = sizeof(wp);
 
@@ -476,6 +526,8 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
 
   WINDOWDATA *data = (WINDOWDATA*)cbWindows.GetItemDataPtr(i);
 
+  bool bAlreadyPositioned = false;
+
   for (POSITION pos = checkedWindows->GetHeadPosition(); pos;)
   {
     if (checkedWindows->GetNext(pos) == hwnd)
@@ -488,41 +540,34 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
   if (bAlreadyPositioned && !data->keep)
     return;
 
-  ::ShowWindow(hwnd, SW_RESTORE);
+  // position window in a background thread, some windows are not respondig, so we don`t want to hang too
+  if (!data->Thread.WasStarted())
+  {
+    data->hwnd = hwnd;
+    data->Thread.Begin(&windowPositionThread, data);
+    return;
+  }
 
-  RECT rect;
-  ::GetWindowRect(hwnd, &rect);
+  if (!data->Thread.Join(0))
+    return;
 
-  int left = data->left;
+  if (!bAlreadyPositioned)
+    checkedWindows->AddTail(data->hwnd);
 
-  if (left == -1)
-    left = rect.left;
+  if (bNoAutotype || bAlreadyPositioned)
+    return;
 
-  int top = data->top;
-
-  if (top == -1)
-    top = rect.top;
-
-  int width = data->width;
-
-  if (width == -1)
-    width = rect.right - rect.left;
-
-  int height = data->height;
-
-  if (height == -1)
-    height = rect.bottom - rect.top;
-
-  if(left != rect.left || top != rect.top || width != rect.right - rect.left || height != rect.bottom - rect.top)
-    ::SetWindowPos(hwnd, NULL, left, top, width, height, SWP_NOACTIVATE | SWP_NOZORDER);
-
-  if(!bAlreadyPositioned)
-    checkedWindows->AddTail(hwnd);
-
-  if (!data->csAutotype.GetLength() || bNoAutotype || bAlreadyPositioned)
+  if (!data->csAutotype.GetLength() && !data->activate)
     return;
 
   Sleep(data->auto_delay);
+
+  ::ShowWindow(data->hwnd, SW_SHOW);
+  ::SetForegroundWindow(data->hwnd);
+  ::SetActiveWindow(data->hwnd);
+
+  if (!data->csAutotype.GetLength())
+    return;
 
   CString &asKeys = data->csAutotype;
 
@@ -531,10 +576,6 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
   memset(&inp, 0, sizeof(inp));
   inp.type = INPUT_KEYBOARD;
   inp.ki.dwFlags = KEYEVENTF_UNICODE;
-
-  ::ShowWindow(hwnd, SW_SHOW);
-  ::SetForegroundWindow(hwnd);
-  ::SetActiveWindow(hwnd);
 
   for (int i = 0; i < asKeys.GetLength(); i++)
   {
@@ -581,16 +622,6 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
 }
 
 //------------------------------------------------------------------------------------------
-void CWinSize3Dlg::Key(BYTE key, int press_release)
-{
-  if(press_release & 1)
-    keybd_event(key, 0, 0, 0);
-
-  if (press_release & 2)
-    keybd_event(key, 0, KEYEVENTF_KEYUP, 0);
-}
-
-//------------------------------------------------------------------------------------------
 void CWinSize3Dlg::OnTimer(UINT_PTR nIDEvent)
 {
   RECT rect;
@@ -602,6 +633,7 @@ void CWinSize3Dlg::OnTimer(UINT_PTR nIDEvent)
     SetTimer(0, 500, NULL);
   }
 
+  // check for desktop resolution changes
   const HWND hDesktop = ::GetDesktopWindow();
   ::GetWindowRect(hDesktop, &rect);
 
@@ -609,6 +641,7 @@ void CWinSize3Dlg::OnTimer(UINT_PTR nIDEvent)
   {
     memmove(&desktop, &rect, sizeof(rect));
     iCurTab = 0;
+
     LoadData();
     CustomizeMenu();
 
@@ -616,6 +649,17 @@ void CWinSize3Dlg::OnTimer(UINT_PTR nIDEvent)
 
     if(bFirstShow)
       bNoAutotype = true;
+
+    CXMLNode *n = xml.Root.FindByPath("newResolutionTimeoutSecs");
+
+    if (n)
+      pauseWindowChecks = n->asInt() * 2;
+  }
+
+  if (pauseWindowChecks) 
+  {
+    pauseWindowChecks--;
+    return;
   }
 
   EnumWindows(EnumWindowsProc, (LPARAM)this);
@@ -698,6 +742,7 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
     edAutoDelay.SetWindowTextA("");
     cbCmpMode.SetCurSel(0);
     cbKeep.SetCheck(0);
+    cbActivateWindow.SetCheck(0);
 
     return;
   }
@@ -738,6 +783,8 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
   cbCmpMode.SetCurSel(data->cmp_mode);
 
   cbKeep.SetCheck(data->keep);
+
+  cbActivateWindow.SetCheck(data->activate);
 
   btnApply.EnableWindow(false);
 }
@@ -794,6 +841,8 @@ void CWinSize3Dlg::OnBnClickedBtnapply()
   data->cmp_mode = cbCmpMode.GetCurSel();
 
   data->keep = cbKeep.GetCheck();
+
+  data->activate = cbActivateWindow.GetCheck();
 
   cbWindows.SetCurSel(i);
 
@@ -1055,4 +1104,10 @@ BOOL CWinSize3Dlg::PreTranslateMessage(MSG* pMsg)
 void CWinSize3Dlg::OnClickedCbSpecialKey()
 {
   // TODO: Add your control notification handler code here
+}
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::OnClickedActivateWindow()
+{
+  btnApply.EnableWindow(true);
 }

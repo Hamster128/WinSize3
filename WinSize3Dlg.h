@@ -5,6 +5,9 @@
 #pragma once
 
 #include "dlgName.h"
+#include "ThreadControl.h"
+
+class CWinSize3Dlg;
 
 typedef struct
 {
@@ -13,7 +16,10 @@ typedef struct
   bool bUseClass;
   int auto_delay;
   int cmp_mode;
-  bool keep;
+  bool keep, activate;
+
+  HWND hwnd;
+  CThreadControl Thread;
 } WINDOWDATA;
 
 
@@ -32,6 +38,15 @@ public:
 	enum { IDD = IDD_WINSIZE3_DIALOG };
 #endif
 
+  HICON m_hIcon;
+  CSystemTray m_TrayIcon;
+  RECT desktop;
+  CXML xml;
+  int iCurTab;
+  CPtrList *checkedWindows;
+  bool bFirstShow, bNoAutotype;
+  int pauseWindowChecks;
+
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
@@ -45,16 +60,7 @@ protected:
   LPARAM GetTabLParam(int idx);
   int FindThis(HWND hwnd, CString &csTitle, CString &csClass);
   void ClearComboBox();
-  void Key(BYTE key, int press_release = 3);
   void Check4ClosedWindows();
-
-	HICON m_hIcon;
-  CSystemTray m_TrayIcon;
-  RECT desktop;
-  CXML xml;
-  CPtrList *checkedWindows;
-  bool bFirstShow, bNoAutotype;
-  int iCurTab;
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
@@ -104,4 +110,6 @@ public:
   virtual BOOL PreTranslateMessage(MSG* pMsg);
   afx_msg void OnClickedCbSpecialKey();
   CButton cbSpecialKey;
+  afx_msg void OnClickedActivateWindow();
+  CButton cbActivateWindow;
 };
