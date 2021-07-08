@@ -111,6 +111,7 @@ BOOL CWinSize3Dlg::OnInitDialog()
   bNoAutotype = false;
   iCurTab = 0;
   pauseWindowChecks = 0;
+  hideBalloon = 0;
 
   CreateDirectory(commonDocs__ + "\\WinSize3", NULL);
 
@@ -197,6 +198,7 @@ void CWinSize3Dlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
   if(!hwnd)
   {
     m_TrayIcon.ShowBalloon("No active window!");
+    hideBalloon = 4;
     return;
   }
 
@@ -218,12 +220,14 @@ void CWinSize3Dlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
     cbWindows.SetItemDataPtr(i, data);
 
     m_TrayIcon.ShowBalloon("New " + csTitle);
+    hideBalloon = 4;
   }
   else
   {
     data = (WINDOWDATA*)cbWindows.GetItemDataPtr(i);
 
     m_TrayIcon.ShowBalloon("Updated " + csTitle);
+    hideBalloon = 4;
   }
 
   RECT rect;
@@ -631,6 +635,14 @@ void CWinSize3Dlg::OnTimer(UINT_PTR nIDEvent)
     KillTimer(0);
     ShowWindow(SW_HIDE);
     SetTimer(0, 500, NULL);
+  }
+
+  if (hideBalloon)
+  {
+    hideBalloon--;
+
+    if (!hideBalloon)
+      m_TrayIcon.HideBalloon();
   }
 
   // check for desktop resolution changes

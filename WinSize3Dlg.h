@@ -46,6 +46,7 @@ public:
   CPtrList *checkedWindows;
   bool bFirstShow, bNoAutotype;
   int pauseWindowChecks;
+  int hideBalloon;
 
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
