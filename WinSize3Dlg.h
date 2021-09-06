@@ -16,7 +16,7 @@ typedef struct
   bool bUseClass;
   int auto_delay;
   int cmp_mode;
-  bool keep, activate;
+  bool keep, activate, keepDisplayOn;
 
   HWND hwnd;
   CThreadControl Thread;
@@ -47,6 +47,7 @@ public:
   bool bFirstShow, bNoAutotype;
   int pauseWindowChecks;
   int hideBalloon;
+  bool bDisplayRequired;
 
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
@@ -113,4 +114,6 @@ public:
   CButton cbSpecialKey;
   afx_msg void OnClickedActivateWindow();
   CButton cbActivateWindow;
+  CButton cbKeepDisplayOn;
+  afx_msg void OnClickedKeepDisplayOn();
 };
