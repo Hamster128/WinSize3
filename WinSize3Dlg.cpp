@@ -289,7 +289,7 @@ void CWinSize3Dlg::LoadData()
     TCITEM item;
     int i = 1;
 
-    for (CXMLNode *w = node->FirstChild(); w; w = node->NextChild())
+    for (CXMLNodeIterator w(node); w; w.NextChild())
     {
       item.mask = TCIF_TEXT | TCIF_PARAM;
       item.pszText = w->Data;
@@ -314,7 +314,7 @@ void CWinSize3Dlg::LoadData()
   if (!node)
     return;
 
-  for (CXMLNode *w = node->FirstChild(); w; w = node->NextChild())
+  for (CXMLNodeIterator w(node); w; w.NextChild())
   {
     WINDOWDATA *data = new WINDOWDATA;
 
