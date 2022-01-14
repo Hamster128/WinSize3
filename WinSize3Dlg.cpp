@@ -5,6 +5,7 @@
 #include "WinSize3.h"
 #include "WinSize3Dlg.h"
 #include "afxdialogex.h"
+#include "psapi.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -44,6 +45,7 @@ void CWinSize3Dlg::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_CB_SPECIAL_KEY, cbSpecialKey);
   DDX_Control(pDX, IDC_ACTIVATE_WINDOW, cbActivateWindow);
   DDX_Control(pDX, IDC_KEEP_DISPLAY_ON, cbKeepDisplayOn);
+  DDX_Control(pDX, IDC_EDEXE, edExe);
 }
 
 //------------------------------------------------------------------------------------------
@@ -204,8 +206,10 @@ void CWinSize3Dlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
     return;
   }
 
+  CString csExecuteable = getExecuteableOfWindow(hwnd);
+
   CString csTitle, csClass;
-  int i = FindThis(hwnd, csTitle, csClass);
+  int i = FindThis(hwnd, csTitle, csClass, csExecuteable);
 
   WINDOWDATA *data;
 
@@ -215,6 +219,7 @@ void CWinSize3Dlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
     data = new WINDOWDATA;
     data->csClass = csClass;
     data->bUseClass = true;
+    data->csExecuteable = csExecuteable;
     data->cmp_mode = 1;
     data->auto_delay = 100;
     data->keep = false;
@@ -330,6 +335,7 @@ void CWinSize3Dlg::LoadData()
     data->keep = atoi((*w)["keep"]);
     data->activate = atoi((*w)["activate"]);
     data->keepDisplayOn = atoi((*w)["keep_display_on"]);
+    data->csExecuteable = (*w)["executeable"];
 
     int i = cbWindows.AddString(w->Property("text"));
     cbWindows.SetItemDataPtr(i, data);
@@ -422,6 +428,7 @@ void CWinSize3Dlg::SaveData()
     w->AddChild("keep", data->keep);
     w->AddChild("activate", data->activate);
     w->AddChild("keep_display_on", data->keepDisplayOn);
+    w->AddChild("executeable", data->csExecuteable);
   }
 
   xml.Save(commonDocs__ + "\\WinSize3\\Config.xml");
@@ -438,7 +445,7 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
 }
 
 //------------------------------------------------------------------------------------------
-int CWinSize3Dlg::FindThis(HWND hwnd, CString &csTitle, CString &csClass)
+int CWinSize3Dlg::FindThis(HWND hwnd, CString &csTitle, CString &csClass, CString &csExecuteable)
 {
   char title[1024];
   CString csEntry;
@@ -455,8 +462,10 @@ int CWinSize3Dlg::FindThis(HWND hwnd, CString &csTitle, CString &csClass)
     WINDOWDATA *data = (WINDOWDATA*)cbWindows.GetItemDataPtr(i);
 
     if( ((data->cmp_mode == 0 && csTitle.Find(csEntry) > -1) ||
-         (data->cmp_mode == 1 && csTitle==csEntry)              ) &&
-        (csClass == data->csClass || !data->bUseClass)                )
+         (data->cmp_mode == 1 && csTitle==csEntry)           ||
+          data->cmp_mode == 2                                   )                   &&
+        (csClass == data->csClass || !data->bUseClass)                              &&
+        (!data->csExecuteable.GetLength() || data->csExecuteable == csExecuteable)      )
       return i;
   }
 
@@ -510,6 +519,26 @@ UINT AFX_CDECL windowPositionThread(LPVOID pParam)
 }
 
 //------------------------------------------------------------------------------------------
+CString CWinSize3Dlg::getExecuteableOfWindow(const HWND &hwnd)
+{
+  TCHAR buffer[MAX_PATH] = { 0 };
+  DWORD dwProcId = 0;
+
+  GetWindowThreadProcessId(hwnd, &dwProcId);
+
+  HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwProcId);
+
+  if (!hProc)
+    return "";
+
+  GetModuleFileNameEx(hProc, NULL, buffer, MAX_PATH);
+
+  CloseHandle(hProc);
+
+  return buffer;
+}
+
+//------------------------------------------------------------------------------------------
 void CWinSize3Dlg::CheckWindow(HWND hwnd)
 {
   WINDOWPLACEMENT wp;
@@ -527,8 +556,10 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
   if (!wp.rcNormalPosition.right)
     return;
 
+  CString csExecuteable = getExecuteableOfWindow(hwnd);
+
   CString csTitle, csClass;
-  int i = FindThis(hwnd, csTitle, csClass);
+  int i = FindThis(hwnd, csTitle, csClass, csExecuteable);
 
   if (i == -1)
     return;
@@ -765,6 +796,7 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
     edHeight.SetWindowTextA("");
     edAutotype.SetWindowTextA("");
     edClass.SetWindowTextA("");
+    edExe.SetWindowTextA("");
     cbUseClass.SetCheck(true);
     edAutoDelay.SetWindowTextA("");
     cbCmpMode.SetCurSel(0);
@@ -808,6 +840,8 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
 
   cbUseClass.SetCheck(data->bUseClass);
 
+  edExe.SetWindowTextA(data->csExecuteable);
+
   cbCmpMode.SetCurSel(data->cmp_mode);
 
   cbKeep.SetCheck(data->keep);
@@ -823,7 +857,9 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
 void CWinSize3Dlg::OnChangeEdtitle()
 {
   btnApply.EnableWindow(true);
-  cbCmpMode.SetCurSel(0);
+
+  if(cbCmpMode.GetCurSel() == 1)
+    cbCmpMode.SetCurSel(0);
 }
 
 //------------------------------------------------------------------------------------------

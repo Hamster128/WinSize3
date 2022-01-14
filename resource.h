@@ -21,10 +21,11 @@
 #define IDC_CBCMPMODE                   1012
 #define IDC_TAB1                        1013
 #define IDC_EDNAME                      1014
+#define IDC_EDCLASS2                    1014
+#define IDC_EDEXE                       1014
 #define IDC_CBKEEP                      1015
 #define IDC_CB_SPECIAL_KEY              1018
 #define IDC_ACTIVATE_WINDOW             1019
-#define IDC_CHECK1                      1020
 #define IDC_KEEP_DISPLAY_ON             1020
 #define ID_ICONMENU_REPOSITIONALL       32771
 #define ID_ICONMENU_EXIT                32772

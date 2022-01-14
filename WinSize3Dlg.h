@@ -13,6 +13,7 @@ typedef struct
 {
   int left, top, width, height;
   CString csClass, csAutotype;
+  CString csExecuteable;
   bool bUseClass;
   int auto_delay;
   int cmp_mode;
@@ -60,9 +61,10 @@ protected:
   void LoadData();
   CString GetTabTitle(int idx);
   LPARAM GetTabLParam(int idx);
-  int FindThis(HWND hwnd, CString &csTitle, CString &csClass);
+  int FindThis(HWND hwnd, CString &csTitle, CString &csClass, CString &csExecuteable);
   void ClearComboBox();
   void Check4ClosedWindows();
+  CString getExecuteableOfWindow(const HWND &hwnd);
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
@@ -116,4 +118,5 @@ public:
   CButton cbActivateWindow;
   CButton cbKeepDisplayOn;
   afx_msg void OnClickedKeepDisplayOn();
+  CEdit edExe;
 };
