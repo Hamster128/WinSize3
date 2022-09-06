@@ -901,6 +901,9 @@ void CWinSize3Dlg::OnBnClickedBtnapply()
   edAutoDelay.GetWindowTextA(text);
   data->auto_delay = atoi(text);
 
+  edExe.GetWindowTextA(text);
+  data->csExecuteable = text;
+
   edAutotype.GetWindowTextA(data->csAutotype);
 
   data->bUseClass = cbUseClass.GetCheck();
