@@ -119,4 +119,5 @@ public:
   CButton cbKeepDisplayOn;
   afx_msg void OnClickedKeepDisplayOn();
   CEdit edExe;
+  afx_msg void OnEnChangeEdexe();
 };

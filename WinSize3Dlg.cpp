@@ -76,6 +76,7 @@ BEGIN_MESSAGE_MAP(CWinSize3Dlg, CDialogEx)
   ON_BN_CLICKED(IDC_CB_SPECIAL_KEY, &CWinSize3Dlg::OnClickedCbSpecialKey)
   ON_BN_CLICKED(IDC_ACTIVATE_WINDOW, &CWinSize3Dlg::OnClickedActivateWindow)
   ON_BN_CLICKED(IDC_KEEP_DISPLAY_ON, &CWinSize3Dlg::OnClickedKeepDisplayOn)
+  ON_EN_CHANGE(IDC_EDEXE, &CWinSize3Dlg::OnEnChangeEdexe)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -1186,4 +1187,8 @@ void CWinSize3Dlg::OnClickedActivateWindow()
   btnApply.EnableWindow(true);
 }
 
-
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::OnEnChangeEdexe()
+{
+  btnApply.EnableWindow(true);
+}
