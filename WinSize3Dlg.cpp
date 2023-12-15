@@ -46,6 +46,7 @@ void CWinSize3Dlg::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_ACTIVATE_WINDOW, cbActivateWindow);
   DDX_Control(pDX, IDC_KEEP_DISPLAY_ON, cbKeepDisplayOn);
   DDX_Control(pDX, IDC_EDEXE, edExe);
+  DDX_Control(pDX, IDC_CLOSE_WINDOW, cbCloseWindow);
 }
 
 //------------------------------------------------------------------------------------------
@@ -77,6 +78,7 @@ BEGIN_MESSAGE_MAP(CWinSize3Dlg, CDialogEx)
   ON_BN_CLICKED(IDC_ACTIVATE_WINDOW, &CWinSize3Dlg::OnClickedActivateWindow)
   ON_BN_CLICKED(IDC_KEEP_DISPLAY_ON, &CWinSize3Dlg::OnClickedKeepDisplayOn)
   ON_EN_CHANGE(IDC_EDEXE, &CWinSize3Dlg::OnEnChangeEdexe)
+  ON_BN_CLICKED(IDC_CLOSE_WINDOW, &CWinSize3Dlg::OnBnClickedCloseWindow)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -225,6 +227,7 @@ void CWinSize3Dlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
     data->auto_delay = 100;
     data->keep = false;
     data->activate = false;
+    data->close = false;
     data->keepDisplayOn = false;
     cbWindows.SetItemDataPtr(i, data);
 
@@ -335,6 +338,7 @@ void CWinSize3Dlg::LoadData()
     data->cmp_mode = atoi((*w)["cmp_mode"]);
     data->keep = atoi((*w)["keep"]);
     data->activate = atoi((*w)["activate"]);
+    data->close = atoi((*w)["close"]);
     data->keepDisplayOn = atoi((*w)["keep_display_on"]);
     data->csExecuteable = (*w)["executeable"];
 
@@ -428,6 +432,7 @@ void CWinSize3Dlg::SaveData()
     w->AddChild("cmp_mode", data->cmp_mode);
     w->AddChild("keep", data->keep);
     w->AddChild("activate", data->activate);
+    w->AddChild("close", data->close);
     w->AddChild("keep_display_on", data->keepDisplayOn);
     w->AddChild("executeable", data->csExecuteable);
   }
@@ -566,6 +571,12 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
     return;
 
   WINDOWDATA *data = (WINDOWDATA*)cbWindows.GetItemDataPtr(i);
+
+  if (data->close)
+  {
+    ::PostMessage(hwnd, WM_CLOSE, 0, 0);
+    return;
+  }
 
   bool bAlreadyPositioned = false;
 
@@ -803,6 +814,7 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
     cbCmpMode.SetCurSel(0);
     cbKeep.SetCheck(0);
     cbActivateWindow.SetCheck(0);
+    cbCloseWindow.SetCheck(0);
     cbKeepDisplayOn.SetCheck(0);
 
     return;
@@ -848,6 +860,8 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
   cbKeep.SetCheck(data->keep);
 
   cbActivateWindow.SetCheck(data->activate);
+
+  cbCloseWindow.SetCheck(data->close);
 
   cbKeepDisplayOn.SetCheck(data->keepDisplayOn);
 
@@ -913,6 +927,8 @@ void CWinSize3Dlg::OnBnClickedBtnapply()
   data->keep = cbKeep.GetCheck();
 
   data->activate = cbActivateWindow.GetCheck();
+
+  data->close = cbCloseWindow.GetCheck();
 
   data->keepDisplayOn = cbKeepDisplayOn.GetCheck();
 
@@ -1192,6 +1208,13 @@ void CWinSize3Dlg::OnClickedActivateWindow()
 
 //------------------------------------------------------------------------------------------
 void CWinSize3Dlg::OnEnChangeEdexe()
+{
+  btnApply.EnableWindow(true);
+}
+
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::OnBnClickedCloseWindow()
 {
   btnApply.EnableWindow(true);
 }

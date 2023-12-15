@@ -17,7 +17,7 @@ typedef struct
   bool bUseClass;
   int auto_delay;
   int cmp_mode;
-  bool keep, activate, keepDisplayOn;
+  bool keep, activate, keepDisplayOn, close;
 
   HWND hwnd;
   CThreadControl Thread;
@@ -120,4 +120,6 @@ public:
   afx_msg void OnClickedKeepDisplayOn();
   CEdit edExe;
   afx_msg void OnEnChangeEdexe();
+  CButton cbCloseWindow;
+  afx_msg void OnBnClickedCloseWindow();
 };

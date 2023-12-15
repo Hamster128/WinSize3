@@ -26,6 +26,7 @@
 #define IDC_CB_SPECIAL_KEY              1018
 #define IDC_ACTIVATE_WINDOW             1019
 #define IDC_KEEP_DISPLAY_ON             1020
+#define IDC_CLOSE_WINDOW                1021
 #define ID_ICONMENU_REPOSITIONALL       32771
 #define ID_ICONMENU_EXIT                32772
 #define ID_ICONMENU_TAB0                32773
