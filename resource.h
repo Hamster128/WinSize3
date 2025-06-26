@@ -23,6 +23,7 @@
 #define IDC_EDNAME                      1014
 #define IDC_EDEXE                       1014
 #define IDC_CBKEEP                      1015
+#define IDC_EDDELAY                     1016
 #define IDC_CB_SPECIAL_KEY              1018
 #define IDC_ACTIVATE_WINDOW             1019
 #define IDC_KEEP_DISPLAY_ON             1020

@@ -15,7 +15,7 @@ typedef struct
   CString csClass, csAutotype;
   CString csExecuteable;
   bool bUseClass;
-  int auto_delay;
+  int delay, auto_delay;
   int cmp_mode;
   bool keep, activate, keepDisplayOn, close;
 
@@ -122,4 +122,6 @@ public:
   afx_msg void OnEnChangeEdexe();
   CButton cbCloseWindow;
   afx_msg void OnBnClickedCloseWindow();
+  CEdit edDelay;
+  afx_msg void OnChangeEddelay();
 };

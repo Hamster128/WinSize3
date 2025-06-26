@@ -47,6 +47,7 @@ void CWinSize3Dlg::DoDataExchange(CDataExchange* pDX)
   DDX_Control(pDX, IDC_KEEP_DISPLAY_ON, cbKeepDisplayOn);
   DDX_Control(pDX, IDC_EDEXE, edExe);
   DDX_Control(pDX, IDC_CLOSE_WINDOW, cbCloseWindow);
+  DDX_Control(pDX, IDC_EDDELAY, edDelay);
 }
 
 //------------------------------------------------------------------------------------------
@@ -79,6 +80,7 @@ BEGIN_MESSAGE_MAP(CWinSize3Dlg, CDialogEx)
   ON_BN_CLICKED(IDC_KEEP_DISPLAY_ON, &CWinSize3Dlg::OnClickedKeepDisplayOn)
   ON_EN_CHANGE(IDC_EDEXE, &CWinSize3Dlg::OnEnChangeEdexe)
   ON_BN_CLICKED(IDC_CLOSE_WINDOW, &CWinSize3Dlg::OnBnClickedCloseWindow)
+  ON_EN_CHANGE(IDC_EDDELAY, &CWinSize3Dlg::OnChangeEddelay)
 END_MESSAGE_MAP()
 
 //---------------------------------------------------------------------------------------
@@ -224,6 +226,7 @@ void CWinSize3Dlg::OnHotKey(UINT nHotKeyId, UINT nKey1, UINT nKey2)
     data->bUseClass = true;
     data->csExecuteable = csExecuteable;
     data->cmp_mode = 1;
+    data->delay = 0;
     data->auto_delay = 100;
     data->keep = false;
     data->activate = false;
@@ -334,6 +337,7 @@ void CWinSize3Dlg::LoadData()
     data->csClass = (*w)["class"];
     data->csAutotype = (*w)["autotype"];
     data->bUseClass = atoi((*w)["use_class"]);
+    data->delay = atoi((*w)["delay"]);
     data->auto_delay = atoi((*w)["auto_delay"]);
     data->cmp_mode = atoi((*w)["cmp_mode"]);
     data->keep = atoi((*w)["keep"]);
@@ -428,6 +432,7 @@ void CWinSize3Dlg::SaveData()
     w->AddChild("class", data->csClass);
     w->AddChild("autotype", data->csAutotype);
     w->AddChild("use_class", data->bUseClass);
+    w->AddChild("delay", data->delay);
     w->AddChild("auto_delay", data->auto_delay);
     w->AddChild("cmp_mode", data->cmp_mode);
     w->AddChild("keep", data->keep);
@@ -519,7 +524,10 @@ UINT AFX_CDECL windowPositionThread(LPVOID pParam)
     height = rect.bottom - rect.top;
 
   if (left != rect.left || top != rect.top || width != rect.right - rect.left || height != rect.bottom - rect.top || data->activate)
+  {
+    Sleep(data->delay);
     ::SetWindowPos(data->hwnd, NULL, left, top, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
+  }
 
   return 0;
 }
@@ -806,6 +814,7 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
     edTop.SetWindowTextA("");
     edWidth.SetWindowTextA("");
     edHeight.SetWindowTextA("");
+    edDelay.SetWindowTextA("");
     edAutotype.SetWindowTextA("");
     edClass.SetWindowTextA("");
     edExe.SetWindowTextA("");
@@ -843,6 +852,9 @@ void CWinSize3Dlg::OnSelchangeCbwindows()
   if (data->height == -1) text = "";
   else text.Format("%d", data->height);
   edHeight.SetWindowTextA(text);
+
+  text.Format("%d", data->delay);
+  edDelay.SetWindowTextA(text);
 
   text.Format("%d", data->auto_delay);
   edAutoDelay.SetWindowTextA(text);
@@ -911,6 +923,9 @@ void CWinSize3Dlg::OnBnClickedBtnapply()
   edHeight.GetWindowTextA(text);
   if (text == "") data->height = -1;
   else            data->height = atoi(text);
+
+  edDelay.GetWindowTextA(text);
+  data->delay = atoi(text);
 
   edAutoDelay.GetWindowTextA(text);
   data->auto_delay = atoi(text);
@@ -1212,9 +1227,14 @@ void CWinSize3Dlg::OnEnChangeEdexe()
   btnApply.EnableWindow(true);
 }
 
-
 //------------------------------------------------------------------------------------------
 void CWinSize3Dlg::OnBnClickedCloseWindow()
+{
+  btnApply.EnableWindow(true);
+}
+
+//------------------------------------------------------------------------------------------
+void CWinSize3Dlg::OnChangeEddelay()
 {
   btnApply.EnableWindow(true);
 }
