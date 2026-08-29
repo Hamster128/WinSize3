@@ -23,7 +23,7 @@
     <ProjectGuid>{AC7EDFCD-E3B2-467E-8FE0-FAC728A30529}</ProjectGuid>
     <Keyword>MFCProj</Keyword>
     <RootNamespace>WinSize3</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

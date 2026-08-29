@@ -667,6 +667,8 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
       else if (asKey == "UP") Key(VK_UP);
       else if (asKey == "LEFT") Key(VK_LEFT);
       else if (asKey == "RIGHT") Key(VK_RIGHT);
+      else if (asKey == "SHIFT DOWN") Key(VK_LSHIFT, 1);
+      else if (asKey == "SHIFT UP") Key(VK_LSHIFT, 2);
       else if (asKey == "CTRL DOWN") Key(VK_LCONTROL, 1);
       else if (asKey == "CTRL UP") Key(VK_LCONTROL, 2);
       else if (asKey == "ALT DOWN") Key(VK_LMENU, 1);
@@ -675,12 +677,19 @@ void CWinSize3Dlg::CheckWindow(HWND hwnd)
       continue;
     }
 
-    inp.ki.dwFlags = KEYEVENTF_UNICODE;
-    inp.ki.wScan = c;
-    SendInput(1, &inp, sizeof(inp));
+    // Translate character to Virtual Key Code + Shift State
+    SHORT vkState = VkKeyScan(c);
+    BYTE vk = LOBYTE(vkState);
+    BYTE shiftState = HIBYTE(vkState);
 
-    inp.ki.dwFlags |= KEYEVENTF_KEYUP;
-    SendInput(1, &inp, sizeof(inp));
+    // Auto-press Shift if required by the character (e.g., uppercase letters or symbols)
+    if (shiftState & 1) Key(VK_SHIFT, 1);
+
+    // Send physical Virtual Key DOWN and UP
+    Key(vk, 3);
+
+    // Auto-release Shift if pressed
+    if (shiftState & 1) Key(VK_SHIFT, 2);
   }
 }
 
@@ -1150,7 +1159,6 @@ void CWinSize3Dlg::OnClickedKeepDisplayOn()
   btnApply.EnableWindow(true);
 }
 
-//------------------------------------------------------------------------------------------
 BOOL CWinSize3Dlg::PreTranslateMessage(MSG* pMsg)
 {
   if (GetFocus() == &edAutotype)
@@ -1160,54 +1168,63 @@ BOOL CWinSize3Dlg::PreTranslateMessage(MSG* pMsg)
       CString csText;
       edAutotype.GetWindowTextA(csText);
 
-      BOOL bCtrl = ::GetKeyState(VK_CONTROL) & 0x8000;
-      BOOL bShift = ::GetKeyState(VK_SHIFT) & 0x8000;
-      BOOL bAlt = ::GetKeyState(VK_MENU) & 0x8000;
+      BOOL bCtrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
+      BOOL bAlt = (::GetKeyState(VK_MENU) & 0x8000) != 0;
 
+      // Intercept standalone navigation/special keys
       switch (pMsg->wParam)
       {
-      case VK_CONTROL: return(true);
-      case VK_MENU: return(true);
-      case VK_TAB: edAutotype.SetWindowTextA(csText + "{TAB}"); edAutotype.SetSel(-1); return(true);
-      case VK_RETURN: edAutotype.SetWindowTextA(csText + "{RETURN}"); edAutotype.SetSel(-1); return(true);
-      case VK_LWIN: edAutotype.SetWindowTextA(csText + "{LWIN DOWN}"); edAutotype.SetSel(-1); return(true);
-      case VK_LEFT: edAutotype.SetWindowTextA(csText + "{LEFT}"); edAutotype.SetSel(-1); return(true);
-      case VK_UP: edAutotype.SetWindowTextA(csText + "{UP}"); edAutotype.SetSel(-1); return(true);
-      case VK_RIGHT: edAutotype.SetWindowTextA(csText + "{RIGHT}"); edAutotype.SetSel(-1); return(true);
-      case VK_DOWN: edAutotype.SetWindowTextA(csText + "{DOWN}"); edAutotype.SetSel(-1); return(true);
+      case VK_CONTROL:
+      case VK_MENU:
+        return TRUE; // Consume raw modifier press so it doesn't print garbage
+
+      case VK_TAB:    edAutotype.SetWindowTextA(csText + "{TAB}");       edAutotype.SetSel(-1); return TRUE;
+      case VK_RETURN: edAutotype.SetWindowTextA(csText + "{RETURN}");    edAutotype.SetSel(-1); return TRUE;
+      case VK_LWIN:   edAutotype.SetWindowTextA(csText + "{LWIN DOWN}"); edAutotype.SetSel(-1); return TRUE;
+      case VK_LEFT:   edAutotype.SetWindowTextA(csText + "{LEFT}");      edAutotype.SetSel(-1); return TRUE;
+      case VK_UP:     edAutotype.SetWindowTextA(csText + "{UP}");        edAutotype.SetSel(-1); return TRUE;
+      case VK_RIGHT:  edAutotype.SetWindowTextA(csText + "{RIGHT}");     edAutotype.SetSel(-1); return TRUE;
+      case VK_DOWN:   edAutotype.SetWindowTextA(csText + "{DOWN}");      edAutotype.SetSel(-1); return TRUE;
       }
 
-      if (bCtrl && pMsg->wParam != 219)
+      // Handle standard letter combinations (A-Z) with Ctrl or Alt
+      if ((bCtrl || bAlt) && (pMsg->wParam >= 'A' && pMsg->wParam <= 'Z'))
       {
-        edAutotype.SetWindowTextA(csText + "{CTRL DOWN}" + (char)tolower(pMsg->wParam) + "{CTRL UP}"); 
+        char charCode = (char)tolower((int)pMsg->wParam);
+        CString keyTag;
+
+        if (bCtrl)
+          keyTag.Format("{CTRL DOWN}%c{CTRL UP}", charCode);
+        else if (bAlt)
+          keyTag.Format("{ALT DOWN}%c{ALT UP}", charCode);
+
+        edAutotype.SetWindowTextA(csText + keyTag);
         edAutotype.SetSel(-1);
-      }
-      
-      if (bAlt && pMsg->wParam!=219)
-      {
-        edAutotype.SetWindowTextA(csText + "{ALT DOWN}" + (char)tolower(pMsg->wParam) + "{ALT UP}"); 
-        edAutotype.SetSel(-1);
+        return TRUE; // Block default edit control handling
       }
     }
 
-    if (pMsg->message == WM_KEYUP)
+    if (pMsg->message == WM_KEYUP && cbSpecialKey.GetCheck())
     {
       CString csText;
       edAutotype.GetWindowTextA(csText);
 
       switch (pMsg->wParam)
       {
-      case VK_CONTROL: return(true);
-      case VK_MENU: return(true);
-      case VK_LWIN: edAutotype.SetWindowTextA(csText + "{LWIN UP}"); edAutotype.SetSel(-1); return(true);
+      case VK_CONTROL:
+      case VK_MENU:
+        return TRUE;
+
+      case VK_LWIN:
+        edAutotype.SetWindowTextA(csText + "{LWIN UP}");
+        edAutotype.SetSel(-1);
+        return TRUE;
       }
     }
   }
 
-
   return CDialogEx::PreTranslateMessage(pMsg);
 }
-
 
 //------------------------------------------------------------------------------------------
 void CWinSize3Dlg::OnClickedCbSpecialKey()
